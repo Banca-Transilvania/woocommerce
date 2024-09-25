@@ -1,0 +1,20 @@
+<?php
+return [
+    '104' => 'Card restricted (temporary or permanent blocks due to no payment or death of cardholder).',
+    '124' => 'Transaction cannot be authorized due to government, central bank or financial institution agreement, laws or regulations.',
+    '320' => 'Inactive card. Please activate the card.',
+    '801' => 'Issuer unavailable.',
+    '803' => 'Card blocked. Contact the issuing bank or retry the transaction with another card.',
+    '804' => 'Transaction not permitted. Contact the issuing bank or retry the transaction with another card.',
+    '805' => 'Transaction rejected.',
+    '861' => 'Wrong card expiration date.',
+    '871' => 'Wrong CVV.',
+    '905' => 'Invalid card. It does not exist in the database.',
+    '906' => 'Card expired.',
+    '913' => 'Invalid transaction. Contact the issuing bank or retry the transaction with another card.',
+    '914' => 'Invalid account. Please contact the issuing bank.',
+    '915' => 'Insufficient funds.',
+    '917' => 'Transaction limit exceeded.',
+    '952' => 'Fraud is suspected.',
+    '998' => 'Installment transaction is not allowed with this card. Please use a credit card issued by Banca Transilvania.',
+];
