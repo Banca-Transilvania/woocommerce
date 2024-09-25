@@ -1,0 +1,20 @@
+<?php
+return [
+    '104' => 'Card restricționat (blocat temporar sau permanent din cauza lipsei plății sau a morții titularului de card).',
+    '124' => 'Tranzacția nu poate fi autorizată din cauza acordului guvernului, băncii centrale sau instituției financiare, legi sau reglementări.',
+    '320' => 'Card inactiv. Vă rugăm activați cardul.',
+    '801' => 'Emitent indisponibil.',
+    '803' => 'Card blocat. Contactați banca emitentă sau reîncercați tranzacția cu alt card.',
+    '804' => 'Tranzacția nu este permisă. Contactați banca emitentă sau reîncercați tranzacția cu alt card.',
+    '805' => 'Tranzacție respinsă.',
+    '861' => 'Dată expirare card greșită.',
+    '871' => 'CVV greșit.',
+    '905' => 'Card invalid. Acesta nu există în baza de date.',
+    '906' => 'Card expirat.',
+    '913' => 'Tranzacție invalidă. Contactați banca emitentă sau reîncercați tranzacția cu alt card.',
+    '914' => 'Cont invalid. Vă rugăm contactați banca emitentă.',
+    '915' => 'Fonduri insuficiente.',
+    '917' => 'Limită tranzacționare depășită.',
+    '952' => 'Suspect de fraudă.',
+    '998' => 'Tranzacția în rate nu este permisă cu acest card. Te rugăm să folosești un card de credit emis de Banca Transilvania.',
+];

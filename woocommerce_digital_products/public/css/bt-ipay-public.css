@@ -1,0 +1,54 @@
+/**
+ * All of the CSS for your public-facing functionality should be
+ * included in this file.
+ */
+
+#bt-ipay-cof-page .toggle-ipay-card,
+#bt-ipay-cof-page .delete-ipay-card
+{
+	display: block;
+	padding: 2px 5px;
+	border-radius: 5px;
+	color: white;
+	margin:5px 0;
+	text-decoration: none;
+	text-align: center;
+}
+
+#bt-ipay-cof-page .delete-ipay-card {
+	background-color: #dc3545;
+}
+
+#bt-ipay-cof-page .disable-ipay-card {
+	background-color: #ffca2c;
+}
+
+#bt-ipay-cof-page .enable-ipay-card {
+	background-color: #198754;
+}
+#bt-ipay-cof-page .bt-ipay-add-card {
+	margin-right: 10px;
+}
+#bt-ipay-cof-page .bt-ipay-card-actions {
+	text-align: center;
+}
+#bt-ipay-cof-page .bt-ipay-add-card-wrap {
+	display: flex;
+	align-items: center;
+	margin-bottom:10px;
+}
+#bt-ipay-cof-page .bt-ipay-actions-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: space-around;
+}
+
+.bt-ipay-card-select {
+	width: 100%;
+	padding: 5px;
+	margin: 5px 0;
+}
+.bt-ipay-use-new-card {
+	display: block;
+	width: 100%;
+}
