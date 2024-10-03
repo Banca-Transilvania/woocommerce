@@ -1,5 +1,5 @@
 ===  BT iPay Payments ===
-Contributors: (this should be a list of wordpress.org userid's)
+Contributors: bancatransilvania
 Donate link: https://btepos.ro/module-ecommerce/
 Tags: payment, plata, banca transilvania
 Requires at least: 5.9
