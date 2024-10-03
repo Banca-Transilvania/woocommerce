@@ -1,0 +1,14 @@
+{
+    "name": "banca-transilvania/bt-ipay-payments",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Banca Transilvania",
+            "email": "aplicatiiecommerce@btrl.ro"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "banca-transilvania/ipay-sdk": "^1.0"
+    }
+}
