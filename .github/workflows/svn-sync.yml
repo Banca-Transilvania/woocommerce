@@ -1,0 +1,37 @@
+name: Sync with SVN on release
+
+on:
+  release:
+    types:
+      - created
+  workflow_dispatch:
+
+jobs:
+  svn_sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get release version
+        id: get_version
+        run: |
+          RELEASE_VERSION=$(grep "^Stable tag:" readme.txt | awk -F' ' '{print $NF}')
+          echo "::set-output name=version::$RELEASE_VERSION"
+
+      - name: Sync with SVN on release
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_REP_USER }}
+          SVN_PASSWORD: ${{ secrets.SVN_REP_PW }}
+        run: |
+          RELEASE_VERSION=${{ steps.get_version.outputs.version }}
+          echo "version: $RELEASE_VERSION"
+          mkdir ~/tmp
+          cd ~/tmp
+          svn co --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert https://plugins.svn.wordpress.org/bt-ipay-payments/
+          cd bt-ipay-payments
+          svn delete trunk/*
+          rsync -r --exclude='.git' --exclude='.github' ${{ github.workspace }}/ trunk/
+          svn add --force trunk/*
+          svn commit --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert -m "release $RELEASE_VERSION"
+          svn copy --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert https://plugins.svn.wordpress.org/bt-ipay-payments/trunk https://plugins.svn.wordpress.org/bt-ipay-payments/tags/$RELEASE_VERSION -m "release $RELEASE_VERSION"
