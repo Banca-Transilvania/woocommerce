@@ -31,7 +31,7 @@ jobs:
           svn co --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert https://plugins.svn.wordpress.org/bt-ipay-payments/
           cd bt-ipay-payments
           svn delete trunk/*
-          rsync -r --exclude='.git' --exclude='.github' ${{ github.workspace }}/ trunk/
+          rsync -r --exclude='.git' --exclude='.github' ${{ github.workspace }}/woocommerce/ trunk/
           svn add --force trunk/*
           svn commit --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert -m "release $RELEASE_VERSION"
           svn copy --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive --trust-server-cert https://plugins.svn.wordpress.org/bt-ipay-payments/trunk https://plugins.svn.wordpress.org/bt-ipay-payments/tags/$RELEASE_VERSION -m "release $RELEASE_VERSION"
