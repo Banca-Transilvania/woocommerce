@@ -16,7 +16,7 @@ jobs:
       - name: Get release version
         id: get_version
         run: |
-          RELEASE_VERSION=$(grep "^Stable tag:" woocommerce/readme.txt | awk -F' ' '{print $NF}')
+          RELEASE_VERSION=$(grep "^Stable tag:" woocommerce/README.txt | awk -F' ' '{print $NF}')
           echo "::set-output name=version::$RELEASE_VERSION"
 
       - name: Sync with SVN on release
