@@ -54,12 +54,20 @@ class Bt_Ipay_Activator {
     /**
      * Create tables for a specific blog.
      */
-    public static function create_tables_for_blog($blog_id) {
-        switch_to_blog($blog_id);
-		self::create_payment_state_table();
-		self::create_cart_storage_table();
-        restore_current_blog();
-	}
+    public static function create_tables_for_blog( $blog_id ) {
+        $is_ms = function_exists('switch_to_blog') && is_multisite();
+
+        if ( $is_ms ) {
+            switch_to_blog( (int) $blog_id );
+        }
+
+        self::create_payment_state_table();
+        self::create_cart_storage_table();
+
+        if ( $is_ms ) {
+            restore_current_blog();
+        }
+    }
 
 	private static function create_payment_state_table() {
 		global $wpdb;
