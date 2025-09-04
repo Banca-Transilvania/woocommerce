@@ -16,7 +16,7 @@
  * Plugin Name:       BT iPay Payments
  * Plugin URI:        https://btepos.ro/module-ecommerce
  * Description:       Extinde WooCommerce cu plata prin <strong>iPay BT</strong>. Pentru conectare aveti nevoie de credentiale API de la Banca Transilvania. Pentru detalii aplicatiiecommerce@btrl.ro
- * Version:           1.0.1
+ * Version:           1.0.2
  * Author:            Banca Transilvania
  * Author URI:        https://btepos.ro/module-ecommerce/
  * License:           GPL-2.0+
@@ -38,7 +38,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'BT_IPAY_VERSION', '1.0.1' );
+define( 'BT_IPAY_VERSION', '1.0.2' );
 
 define( 'BT_IPAY_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
@@ -48,9 +48,9 @@ define( 'BT_IPAY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
  * The code that runs during plugin activation.
  * This action is documented in includes/class-bt-ipay-activator.php
  */
-function bt_ipay_activate() {
+function bt_ipay_activate($network_wide) {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-bt-ipay-activator.php';
-	Bt_Ipay_Activator::activate();
+    Bt_Ipay_Activator::activate((bool) $network_wide);
 }
 
 /**
@@ -92,3 +92,12 @@ add_action( 'before_woocommerce_init', function() {
 		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
 	}
 } );
+
+add_action('wpmu_new_blog', function ($blog_id) {
+    if ( ! class_exists('Bt_Ipay_Activator') ) {
+        require_once plugin_dir_path(__FILE__) . 'includes/class-bt-ipay-activator.php';
+    }
+    if ( method_exists('Bt_Ipay_Activator', 'create_tables_for_blog') ) {
+        Bt_Ipay_Activator::create_tables_for_blog($blog_id);
+    }
+}, 10, 1);
