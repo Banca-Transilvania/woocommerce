@@ -117,7 +117,8 @@ class Bt_Ipay_Public {
 	private function is_card_management_page()
 	{
 		global $wp;
-        return home_url( add_query_arg( array() , $wp->request ) );
+        $current_url = home_url(add_query_arg($wp->query_vars, $wp->request));
+		
 		return strpos( $current_url, "bt-ipay-cards" ) !== false;
 	}
 }
