@@ -100,6 +100,7 @@ final class CurlHttpAdapter implements HttpClientInterface
             CURLOPT_CONNECTTIMEOUT => self::DEFAULT_CONNECT_TIMEOUT,
             CURLOPT_TIMEOUT        => self::DEFAULT_TIMEOUT,
             CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
         ]);
 
         $this->setRequestMethod($curl, $httpMethod, $httpBody);

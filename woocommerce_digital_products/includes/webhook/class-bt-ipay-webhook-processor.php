@@ -238,10 +238,12 @@ class Bt_Ipay_Webhook_Processor {
 	}
 
 	private function can_update_order_status( string $current_status, string $new_status ): bool {
-		if ( in_array( $new_status, array( 'cancelled', 'failed', 'processing' ) ) ) {
-			return ! in_array( $current_status, array( 'refunded', 'complete' ) );
-		}
-
+                 if ( in_array( $new_status, array( 'cancelled' , 'processing' ) ) ) {
+                         return ! in_array( $current_status, array( 'refunded' , 'complete' ) );
+                 }
+                 if (in_array( $new_status, array( 'failed' ) ) ) {
+                         return ! in_array( $current_status, array( 'refunded' , 'complete' , 'processing' , 'on-hold' ) );
+                 }
 		return true;
 	}
 
