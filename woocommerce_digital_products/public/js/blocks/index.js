@@ -1,6 +1,8 @@
 import './style.css';
 import { useState, useEffect } from 'react';
 import { useDispatch } from '@wordpress/data';
+import { registerPaymentMethod } from '@woocommerce/blocks-registry';
+import { getSetting } from '@woocommerce/settings';
 
 const BtIpayPayment = ({ gateway, eventRegistration, emitResponse }) => {
 	const { createErrorNotice } = useDispatch( 'core/notices' );
@@ -93,10 +95,10 @@ const BtIpayPayment = ({ gateway, eventRegistration, emitResponse }) => {
         </div>
     );
 }
-const registerBtIpayMethod = ({ wc, bt_ipay_gateway }) => {
-    const { registerPaymentMethod } = wc.wcBlocksRegistry;
+const registerBtIpayMethod = () => {
+    const gateway = getSetting('bt-ipay_data', {});
 
-    registerPaymentMethod(createOptions(bt_ipay_gateway));
+    registerPaymentMethod(createOptions(gateway));
 }
 const BtIpayCardList = ({gateway: {cards , selectLabel}, setCard}) => {
 
@@ -143,4 +145,4 @@ const createOptions = (gateway) => {
     }
 }
 
-registerBtIpayMethod(window)
+registerBtIpayMethod()

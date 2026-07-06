@@ -7,11 +7,20 @@ class Currency extends RequestModel
     public const EUR_NUMERIC_CODE = 978;
     public const RON_NUMERIC_CODE = 946;
     public const USD_NUMERIC_CODE = 840;
+    public const LOY_NUMERIC_CODE = 777;
 
     public const CURRENCIES = [
-        'EUR' => 978,
-        'RON' => 946,
-        'USD' => 840,
+        'EUR' => self::EUR_NUMERIC_CODE,
+        'RON' => self::RON_NUMERIC_CODE,
+        'USD' => self::USD_NUMERIC_CODE,
+        'LOY' => self::LOY_NUMERIC_CODE
+    ];
+
+    public const CURRENCIES_CODE = [
+        self::EUR_NUMERIC_CODE => 'EUR',
+        self::RON_NUMERIC_CODE => 'RON',
+        self::USD_NUMERIC_CODE => 'USD',
+        self::LOY_NUMERIC_CODE => 'LOY'
     ];
 
     /**

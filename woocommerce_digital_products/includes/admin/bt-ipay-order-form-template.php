@@ -77,6 +77,22 @@ if ( $this->can_show_form( $payment_data ) ) {
 						<?php echo esc_html( $payment['loy_status'] ?? '' ); ?>
 					</td>
 				</tr>
+				<tr>
+					<td colspan="2" style="text-align:right;">
+						<?php echo esc_html__( 'Combined status: ', 'bt-ipay-payments' ); ?>
+					</td>
+
+					<td style="text-align:right;">
+						<?php
+						echo esc_html(
+							\BTransilvania\Api\Model\IPayStatuses::getCombinedStatus(
+								( isset( $payment['status'] ) && strlen( (string) $payment['status'] ) ) ? $payment['status'] : null,
+								( isset( $payment['loy_status'] ) && strlen( (string) $payment['loy_status'] ) ) ? $payment['loy_status'] : null
+							) ?? ''
+						);
+						?>
+					</td>
+				</tr>
 				<?php
 			}
 		}

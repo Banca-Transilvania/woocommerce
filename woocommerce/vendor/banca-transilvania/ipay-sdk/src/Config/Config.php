@@ -20,6 +20,7 @@ class Config
     private int $currency = self::EUR_CURRENCY;
     private string $platformName = 'iPay Client PHP SDK';
     private string $language = self::ROMANIAN_LANGUAGE;
+    private ?string $returnURL = null;
 
     /**
      * Construct configuration with optional attributes
@@ -52,7 +53,7 @@ class Config
      * @param string|null $value If provided, sets the user
      * @return mixed The current user value if no argument is provided, or $this for chaining if a value is set
      */
-    public function user(string $value = null)
+    public function user(?string $value = null)
     {
         if ($value === null) {
             return $this->user;
@@ -68,7 +69,7 @@ class Config
      * @param string|null $value If provided, sets the password
      * @return string|self The current password value if no argument is provided, or $this for chaining if a value is set
      */
-    public function password(string $value = null)
+    public function password(?string $value = null)
     {
         if ($value === null) {
             return $this->password;
@@ -84,7 +85,7 @@ class Config
      * @param string|null $value If provided, sets the environment
      * @return string|self The current environment value if no argument is provided, or $this for chaining if a value is set
      */
-    public function environment(string $value = null)
+    public function environment(?string $value = null)
     {
         if ($value === null) {
             return $this->environment;
@@ -104,7 +105,7 @@ class Config
      * @param int|null $value If provided, sets the currency
      * @return int|self The current currency value if no argument is provided, or $this for chaining if a value is set
      */
-    public function currency(int $value = null)
+    public function currency(?int $value = null)
     {
         if ($value === null) {
             return $this->currency;
@@ -125,7 +126,7 @@ class Config
      * @param string|null $value If provided, sets the returnURL
      * @return string|self The current returnURL value if no argument is provided, or $this for chaining if a value is set
      */
-    public function returnURL(string $value = null)
+    public function returnURL(?string $value = null)
     {
         if ($value === null) {
             return $this->returnURL;
@@ -145,7 +146,7 @@ class Config
      * @param string|null $value If provided, sets the platformName
      * @return string|self The current platformName value if no argument is provided, or $this for chaining if a value is set
      */
-    public function platformName(string $value = null)
+    public function platformName(?string $value = null)
     {
         if ($value === null) {
             return $this->platformName;
@@ -161,7 +162,7 @@ class Config
      * @param string|null $value If provided, sets the language
      * @return string|self The current language value if no argument is provided, or $this for chaining if a value is set
      */
-    public function language(string $value = null)
+    public function language(?string $value = null)
     {
         if ($value === null) {
             return $this->language;

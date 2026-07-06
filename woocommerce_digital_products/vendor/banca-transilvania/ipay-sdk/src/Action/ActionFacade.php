@@ -48,7 +48,7 @@ class ActionFacade
             throw $e;
         } catch (\Exception $e) {
             $this->logger->error("BT-SDK: Failed to execute API call: " . $e->getMessage());
-            throw new ApiException("Failed to execute API call: " . $e->getMessage(), 0, $e);
+            throw new ApiException("Failed to execute API call: " . $e->getMessage(), 0);
         }
     }
 }

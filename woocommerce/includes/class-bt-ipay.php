@@ -271,69 +271,18 @@ class Bt_Ipay {
 	}
 
 	private function add_blocks() {
-		$this->loader->add_action( 'enqueue_block_assets', $this, 'add_blocks_assets' );
-	}
-
-	public function add_blocks_assets() {
-
-		$gateway = $this->get_payment_gateway();
-
-		if ( $gateway === null ) {
-			return;
-		}
-		wp_enqueue_script(
-			$this->plugin_name . '_blocks',
-			BT_IPAY_PLUGIN_URL . 'public/js/dist/blocks.js',
-			array( 'wc-blocks-registry' ),
-			$this->version,
-			true
-		);
-		wp_localize_script( $this->plugin_name . '_blocks', 'bt_ipay_gateway', $this->get_gateway_data( $gateway ) );
-	}
-
-	private function get_gateway_data( $gateway ) {
-
-		$notices = array();
-
-		if (
-			class_exists('WC') &&
-			function_exists("wc_get_notices") &&
-			WC()->session !== null &&
-			wc_notice_count('error') > 0
-		) {
-			$notices = wc_get_notices('error');
-			wc_clear_notices();
-		}
-
-		return array(
-			'paymentMethodId'    => $gateway->id,
-			'title'              => $gateway->get_title(),
-			'description'        => $gateway->get_description(),
-			'icon'               => $gateway->icon,
-			'canShowCardsOnFile' => $gateway->can_show_cards_on_file(),
-			'cards'              => $gateway->can_show_cards_on_file() ? $gateway->get_user_saved_card() : array(),
-			'saveCardLabel'      => esc_html__( 'Save my card for future uses', 'bt-ipay-payments' ),
-			'newCardLabel'       => esc_html__( 'I want to pay with a new card', 'bt-ipay-payments' ),
-			'selectLabel'        => esc_html__( 'Select saved card', 'bt-ipay-payments' ),
-			'notices'            => $notices,
-		);
+		$this->loader->add_action( 'woocommerce_blocks_payment_method_type_registration', $this, 'register_blocks_payment_method' );
 	}
 
 	/**
-	 * Get our payment gateway
+	 * Register the gateway with the WooCommerce Blocks (Store API) payment
+	 * method registry. Required for the Checkout block to submit the payment
+	 * method; client-side registration alone is not enough.
 	 *
-	 * @return Bt_Ipay_Gateway|null
+	 * @param \Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry
 	 */
-	private function get_payment_gateway() {
-		if ( ! function_exists( 'WC' ) ) {
-			return;
-		}
-		$gateways = WC()->payment_gateways->payment_gateways();
-
-		foreach ( $gateways as $gateway ) {
-			if ( $gateway->id === 'bt-ipay' ) {
-				return $gateway;
-			}
-		}
+	public function register_blocks_payment_method( $payment_method_registry ) {
+		require_once plugin_dir_path( __DIR__ ) . 'includes/blocks/class-bt-ipay-blocks-support.php';
+		$payment_method_registry->register( new Bt_Ipay_Blocks_Support() );
 	}
 }

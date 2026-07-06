@@ -78,7 +78,7 @@ final class CurlHttpAdapter implements HttpClientInterface
         }
 
         $statusCode = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
-        curl_close($curl);
+        unset($curl);
 
         return $this->parseResponse($response, $statusCode, $httpBody);
     }

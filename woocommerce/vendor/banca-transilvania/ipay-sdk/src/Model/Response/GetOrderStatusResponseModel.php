@@ -3,6 +3,7 @@
 namespace BTransilvania\Api\Model\Response;
 
 use BTransilvania\Api\Model\IPayStatuses;
+use BTransilvania\Api\Model\Request\Currency;
 
 class GetOrderStatusResponseModel extends ExtendedResponseModel
 {
@@ -47,13 +48,18 @@ class GetOrderStatusResponseModel extends ExtendedResponseModel
         );
     }
 
-    public function getTotalAvailableForRefund(): float
+    public function getTotalDepositedAmount(): float
     {
         $info = $this->paymentAmountInfo;
         if ($info !== null && property_exists($info, 'depositedAmount') && is_scalar($info->depositedAmount)) {
             return ((int) $info->depositedAmount) / 100;
         }
         return 0.0;
+    }
+
+    public function getTotalAvailableForRefund(): float
+    {
+        return $this->getTotalDepositedAmount();
     }
 
     public function getTotalAvailableForCancel(): float
@@ -73,6 +79,15 @@ class GetOrderStatusResponseModel extends ExtendedResponseModel
         return 0.0;
     }
 
+    public function getCurrencyCode(): string
+    {
+        if (is_numeric($this->currency)) {
+            return Currency::CURRENCIES_CODE[$this->currency];
+        }
+
+        return '';
+    }
+
     public function getTotalRefunded(): float
     {
         $info = $this->paymentAmountInfo;
@@ -86,7 +101,10 @@ class GetOrderStatusResponseModel extends ExtendedResponseModel
     {
         if (is_array($this->merchantOrderParams)) {
             foreach ($this->merchantOrderParams as $param) {
-                if ($param instanceof \stdClass && $param->name === 'loyaltyAmount' && is_scalar($param->value)) {
+                if ($param instanceof \stdClass
+                    && property_exists($param, 'name') && $param->name === 'loyaltyAmount'
+                    && property_exists($param, 'value') && is_scalar($param->value)
+                ) {
                     return floatval($param->value) / 100;
                 }
             }
@@ -108,6 +126,15 @@ class GetOrderStatusResponseModel extends ExtendedResponseModel
             }
         }
         return null;
+    }
+
+    public function getCardAuthInfo(): ?array
+    {
+        $card_info = $this->cardAuthInfo;
+        if (!$card_info instanceof \stdClass) {
+            return null;
+        }
+        return (array)$card_info;
     }
 
     public function getCardInfo(): ?array
