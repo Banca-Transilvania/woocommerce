@@ -53,7 +53,7 @@ class ResponseModel implements ResponseModelInterface
      */
     public function isError(): bool
     {
-        return !is_null($this->errorCode);
+        return !$this->isSuccess();
     }
 
     /**
@@ -83,7 +83,7 @@ class ResponseModel implements ResponseModelInterface
      */
     public function isSuccess(): bool
     {
-        return $this->errorCode == 0;
+        return $this->errorCode === null || $this->errorCode === '0';
     }
 
     public function getLanguage()

@@ -32,6 +32,11 @@ class ApiException extends \Exception
     protected array $links = [];
 
     /**
+     * @var string|null
+     */
+    protected ?string $field = null;
+
+    /**
      * Initializes ApiException with message, code, and optional context.
      *
      * @param string $message
@@ -186,8 +191,8 @@ class ApiException extends \Exception
         $object = static::parseResponseBody($response);
 
         $statusCode = $response->getStatusCode();
-        $errorCode = property_exists($object,'errorCode') ? $object->errorCode : $statusCode;
-        $errorMessage = property_exists($object,'errorMessage') ? $object->errorMessage : '';
+        $errorCode = property_exists($object, 'errorCode') ? $object->errorCode : $statusCode;
+        $errorMessage = property_exists($object, 'errorMessage') ? $object->errorMessage : '';
 
         $message = "Status $statusCode: Error executing API call. Error code: ({$errorCode}): {$errorMessage}";
 

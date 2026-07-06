@@ -40,7 +40,7 @@ final class GuzzleHttpAdapter implements HttpClientInterface
      *
      * @param ClientInterface|null $httpClient
      */
-    public function __construct(ClientInterface $httpClient = null)
+    public function __construct(?ClientInterface $httpClient = null)
     {
         $this->httpClient = $httpClient ?: $this->createDefaultClient();
     }

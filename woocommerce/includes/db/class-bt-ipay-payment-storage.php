@@ -160,7 +160,7 @@ class Bt_Ipay_Payment_Storage {
 				'amount'     => $amount,
 				'loy_id'     => $loy_id,
 				'loy_amount' => $loy_amount,
-				'loy_status' => $status === self::STATUS_REVERSED ? self::STATUS_DECLINED : $status,
+				'loy_status' => $loy_id === null ? '' : ( $status === self::STATUS_REVERSED ? self::STATUS_DECLINED : $status ),
 			),
 			array(
 				'ipay_id' => $payment_engine_id,

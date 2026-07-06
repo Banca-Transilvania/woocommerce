@@ -1,6 +1,7 @@
 <?php
 
 use Automattic\WooCommerce\Admin\Overrides\Order;
+use BTransilvania\Api\Model\IPayStatuses;
 
 /**
  *
@@ -78,11 +79,36 @@ class Bt_Ipay_Webhook_Processor {
 		}
 
 		if ( $is_loy ) {
-			return $this->update_loy_data( $order_service, $payment_data, $payment_status );
+			$this->update_loy_data( $order_service, $payment_data, $payment_status );
+		} else {
+			$this->update_payment_status( $payment_engine_id, $payment_status );
 		}
 
-		$this->update_payment_status( $payment_engine_id, $payment_status );
-		$this->update_order_status( $order_service, $payment_status );
+		$this->update_order_status(
+			$order_service,
+			$this->get_combined_status( $payment_data['ipay_id'] )
+		);
+	}
+
+	/**
+	 * Resolve the effective order status from the card and loyalty legs of a
+	 * split (card + loyalty) payment. For a single-leg payment this returns
+	 * that leg's own status. The row is re-read from storage so it reflects
+	 * the status just persisted for whichever leg this callback was for.
+	 *
+	 * @param string $ipay_id
+	 *
+	 * @return string
+	 */
+	private function get_combined_status( string $ipay_id ): string {
+		$payment_data = $this->payment_storage->find_by_payment_engine_id( $ipay_id );
+
+		$main_status = ( isset( $payment_data['status'] ) && strlen( (string) $payment_data['status'] ) )
+			? $payment_data['status'] : null;
+		$loy_status  = ( isset( $payment_data['loy_status'] ) && strlen( (string) $payment_data['loy_status'] ) )
+			? $payment_data['loy_status'] : null;
+
+		return IPayStatuses::getCombinedStatus( $main_status, $loy_status ) ?? '';
 	}
 
 	private function update_loy_data( Bt_Ipay_Order $order_service, array $payment_data, string $payment_status ) {
@@ -165,13 +191,13 @@ class Bt_Ipay_Webhook_Processor {
 			if ( $is_loy ) {
 				$this->payment_storage->update_loy_status_and_amount(
 					$payment_data['loy_id'],
-					Bt_Ipay_Payment_Storage::STATUS_APPROVED,
+					Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
 					$total_captured
 				);
 			} else {
 				$this->payment_storage->update_status_and_amount(
 					$payment_data['ipay_id'],
-					Bt_Ipay_Payment_Storage::STATUS_APPROVED,
+					Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
 					$total_captured
 				);
 
