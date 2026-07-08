@@ -166,7 +166,7 @@ class Bt_Ipay_Gateway extends WC_Payment_Gateway {
 		return (
 			new Bt_Ipay_Refund_Processor(
 				(int) $order_id,
-				number_format( floatval( $amount ), 2 )
+				round( floatval( $amount ), 2 )
 			)
 		)->process();
 	}

@@ -43,7 +43,7 @@ class Bt_Ipay_Refund_Processor {
 			$result         = new Bt_Ipay_Refund_Result();
 			$refund_service = new Bt_Ipay_Refund(
 				$payment_engine_id,
-				number_format( floatval( $this->amount ), 2 ),
+				round( floatval( $this->amount ), 2 ),
 				$result
 			);
 
