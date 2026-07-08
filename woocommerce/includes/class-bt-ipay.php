@@ -70,7 +70,7 @@ class Bt_Ipay {
 		if ( defined( 'BT_IPAY_VERSION' ) ) {
 			$this->version = BT_IPAY_VERSION;
 		} else {
-			$this->version = '1.0.4';
+			$this->version = '1.0.5';
 		}
 		$this->plugin_name = 'bt-ipay';
 
