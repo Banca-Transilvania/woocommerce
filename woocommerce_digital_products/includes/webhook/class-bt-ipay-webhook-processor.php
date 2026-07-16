@@ -203,9 +203,9 @@ class Bt_Ipay_Webhook_Processor {
 		if ( $total_captured > 0 ) {
 			if ( $is_loy ) {
 				$this->payment_storage->update_loy_status_and_amount(
-					$payment_data['loy_id'],
+					$payment_data['ipay_id'],
 					Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
-					$total_captured
+					$payment_details->get_loy_amount()
 				);
 			} else {
 				$this->payment_storage->update_status_and_amount(
