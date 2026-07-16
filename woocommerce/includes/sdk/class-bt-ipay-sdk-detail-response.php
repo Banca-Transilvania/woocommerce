@@ -95,8 +95,8 @@ class Bt_Ipay_Sdk_Detail_Response {
 	}
 
 	public function get_amount(): float {
-		if ( is_int( $this->response->amount ) ) {
-			return $this->response->amount / 100;
+		if ( is_numeric( $this->response->amount ) ) {
+			return ( (int) $this->response->amount ) / 100;
 		}
 		return 0.0;
 	}

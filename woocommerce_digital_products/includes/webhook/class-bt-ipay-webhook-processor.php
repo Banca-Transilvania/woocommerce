@@ -133,13 +133,16 @@ class Bt_Ipay_Webhook_Processor {
 		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_APPROVED ) {
 			$client          = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
 			$payment_details = $client->payment_details( new Bt_Ipay_Sdk_Common_Payload( $payment_data['ipay_id'] ) );
+			$loy_amount      = $payment_details->get_loy_amount();
 
-			$this->payment_storage->update_loy_status_and_amount(
-				$payment_data['ipay_id'],
-				$payment_status,
-				$payment_details->get_loy_amount()
-			);
-			return;
+			if ( $payment_details->is_successful() && $loy_amount > 0 ) {
+				$this->payment_storage->update_loy_status_and_amount(
+					$payment_data['ipay_id'],
+					$payment_status,
+					$loy_amount
+				);
+				return;
+			}
 		}
 
 		$this->payment_storage->update_loy_status( $payment_data['ipay_id'], $payment_status );
@@ -314,13 +317,16 @@ class Bt_Ipay_Webhook_Processor {
 		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_APPROVED ) {
 			$client          = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
 			$payment_details = $client->payment_details( new Bt_Ipay_Sdk_Common_Payload( $payment_engine_id ) );
+			$amount          = $payment_details->get_amount();
 
-			$this->payment_storage->update_status_and_amount(
-				$payment_engine_id,
-				$payment_status,
-				$payment_details->get_amount()
-			);
-			return;
+			if ( $payment_details->is_successful() && $amount > 0 ) {
+				$this->payment_storage->update_status_and_amount(
+					$payment_engine_id,
+					$payment_status,
+					$amount
+				);
+				return;
+			}
 		}
 
 		$this->payment_storage->update_status(
