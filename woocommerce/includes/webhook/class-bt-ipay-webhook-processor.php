@@ -129,6 +129,22 @@ class Bt_Ipay_Webhook_Processor {
 			/* translators: %s: payment status */
 			sprintf( esc_html__( 'Received loy status: `%s` via callback', 'bt-ipay-payments' ), esc_attr( $payment_status ) )
 		);
+
+		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_APPROVED ) {
+			$client          = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
+			$payment_details = $client->payment_details( new Bt_Ipay_Sdk_Common_Payload( $payment_data['ipay_id'] ) );
+			$loy_amount      = $payment_details->get_loy_amount();
+
+			if ( $payment_details->is_successful() && $loy_amount > 0 ) {
+				$this->payment_storage->update_loy_status_and_amount(
+					$payment_data['ipay_id'],
+					$payment_status,
+					$loy_amount
+				);
+				return;
+			}
+		}
+
 		$this->payment_storage->update_loy_status( $payment_data['ipay_id'], $payment_status );
 	}
 
@@ -186,29 +202,33 @@ class Bt_Ipay_Webhook_Processor {
 		$client          = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
 		$payment_details = $client->payment_details( new Bt_Ipay_Sdk_Common_Payload( $payment_data['ipay_id'] ) );
 
-		$total_captured = $payment_details->get_total_available();
-		if ( $total_captured > 0 ) {
-			if ( $is_loy ) {
+		if ( $is_loy ) {
+			$loy_captured = $payment_details->get_loy_amount();
+			if ( $loy_captured > 0 ) {
 				$this->payment_storage->update_loy_status_and_amount(
-					$payment_data['loy_id'],
-					Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
-					$total_captured
-				);
-			} else {
-				$this->payment_storage->update_status_and_amount(
 					$payment_data['ipay_id'],
 					Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
-					$total_captured
+					$loy_captured
 				);
-
-				if (
-					isset( $payment_data['loy_status'], $payment_data['loy_amount'] ) &&
-					$payment_data['loy_status'] === Bt_Ipay_Payment_Storage::STATUS_DEPOSITED
-				) {//add the loy captured amount
-					$total_captured += floatval( $payment_data['loy_amount'] );
-				}
-				$this->deduct_not_captured( $total_captured, $order_service );
 			}
+			return;
+		}
+
+		$total_captured = $payment_details->get_total_available();
+		if ( $total_captured > 0 ) {
+			$this->payment_storage->update_status_and_amount(
+				$payment_data['ipay_id'],
+				Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
+				$total_captured
+			);
+
+			if (
+				isset( $payment_data['loy_status'], $payment_data['loy_amount'] ) &&
+				$payment_data['loy_status'] === Bt_Ipay_Payment_Storage::STATUS_DEPOSITED
+			) {//add the loy captured amount
+				$total_captured += floatval( $payment_data['loy_amount'] );
+			}
+			$this->deduct_not_captured( $total_captured, $order_service );
 		}
 	}
 
@@ -294,6 +314,21 @@ class Bt_Ipay_Webhook_Processor {
 			$this->has_failed()
 		) {
 			$payment_status = Bt_Ipay_Payment_Storage::STATUS_DECLINED;
+		}
+
+		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_APPROVED ) {
+			$client          = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
+			$payment_details = $client->payment_details( new Bt_Ipay_Sdk_Common_Payload( $payment_engine_id ) );
+			$amount          = $payment_details->get_amount();
+
+			if ( $payment_details->is_successful() && $amount > 0 ) {
+				$this->payment_storage->update_status_and_amount(
+					$payment_engine_id,
+					$payment_status,
+					$amount
+				);
+				return;
+			}
 		}
 
 		$this->payment_storage->update_status(
