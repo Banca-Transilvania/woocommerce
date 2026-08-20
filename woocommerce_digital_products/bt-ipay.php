@@ -24,7 +24,7 @@
  * Text Domain:       ipay
  * Domain Path:       /languages
  * WC requires at least: 7.0
- * WC tested up to: 8.7
+ * WC tested up to: 11.0
  */
 
 // If this file is called directly, abort.
@@ -89,5 +89,6 @@ run_bt_ipay();
 add_action( 'before_woocommerce_init', function() {
 	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
 		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
 	}
 } );

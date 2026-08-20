@@ -16,7 +16,7 @@
  * Plugin Name:       BT iPay Payments
  * Plugin URI:        https://btepos.ro/module-ecommerce
  * Description:       Extinde WooCommerce cu plata prin <strong>iPay BT</strong>. Pentru conectare aveti nevoie de credentiale API de la Banca Transilvania. Pentru detalii aplicatiiecommerce@btrl.ro
- * Version:           1.0.6
+ * Version:           1.0.7
  * Author:            Banca Transilvania
  * Author URI:        https://btepos.ro/module-ecommerce/
  * License:           GPL-2.0+
@@ -25,7 +25,7 @@
  * Domain Path:       /languages
  * Requires Plugins:  woocommerce
  * WC requires at least: 7.0
- * WC tested up to: 8.7
+ * WC tested up to: 11.0
  */
 
 // If this file is called directly, abort.
@@ -38,7 +38,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'BT_IPAY_VERSION', '1.0.6' );
+define( 'BT_IPAY_VERSION', '1.0.7' );
 
 define( 'BT_IPAY_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
@@ -90,6 +90,7 @@ bt_ipay_run();
 add_action( 'before_woocommerce_init', function() {
 	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
 		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
 	}
 } );
 
