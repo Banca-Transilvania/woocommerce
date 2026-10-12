@@ -3,7 +3,7 @@ name: Sync with SVN on release
 on:
   release:
     types:
-      - created
+      - published
   workflow_dispatch:
 
 jobs:
