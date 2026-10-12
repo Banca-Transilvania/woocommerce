@@ -136,7 +136,7 @@ class Bt_Ipay_Return {
         try {
             $order = $this->order_service ? $this->order_service->get_order() : $this->get_order_service($this->request->query('orderId'))->get_order();
             $failedRedirectUrl = $order->get_checkout_payment_url(false);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Fallback if order retrieval fails
             $this->logger->error('Order retrieval failed: ' . (string) $e);
             $failedRedirectUrl = wc_get_checkout_url();
