@@ -24,7 +24,7 @@
  * Text Domain:       ipay
  * Domain Path:       /languages
  * WC requires at least: 7.0
- * WC tested up to: 11.1
+ * WC tested up to: 11.2
  */
 
 // If this file is called directly, abort.
