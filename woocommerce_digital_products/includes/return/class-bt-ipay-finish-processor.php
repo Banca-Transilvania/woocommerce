@@ -51,45 +51,55 @@ class Bt_Ipay_Finish_Processor {
 	}
 
 	public function process() {
-		$lock = new Bt_Ipay_Order_Lock( $this->order_service->get_id() );
-		$lock->acquire();
-		try {
-			$this->order_service->reload();
+		$awaits_payment = $this->order_service->awaits_payment();
+		$accepted       = $this->response->payment_is_accepted();
 
-			if ( $this->store_data() === false ) {
-				throw new Bt_Ipay_Storage_Exception( esc_html__( 'Could not save finish response', 'bt-ipay-payments' ) );
-			}
-			if ( $this->response->payment_is_accepted() ) {
-				$this->save_card_data();
-				$this->update_order_status(
-					$this->response->is_authorized() ? 'on-hold' : ($this->order_service->needs_processing() ? 'processing': 'completed'),
+		if ( ! $accepted && ! $awaits_payment ) {
+			return;
+		}
+
+		$first_record = $this->is_first_record();
+		if ( $this->store_data() === false ) {
+			throw new Bt_Ipay_Storage_Exception( esc_html__( 'Could not save finish response', 'bt-ipay-payments' ) );
+		}
+
+		if ( $accepted ) {
+			$this->save_card_data();
+			if ( $awaits_payment ) {
+				$this->order_service->update_status_if_allowed(
+					$this->response->is_authorized() ? 'on-hold' : ( $this->order_service->needs_processing() ? 'processing' : 'completed' ),
 					/* translators: %s: payment id */
 					sprintf( esc_html__( 'Created payment transaction %s', 'bt-ipay-payments' ), $this->payment_engine_id )
 				);
-			} else {
-				$this->update_order_status( 'failed', $this->get_status_message() );
-				throw new \Exception(
+			} elseif ( $first_record ) {
+				$this->order_service->update_message(
 					sprintf(
-						/* translators: %s: payment error message */
-						esc_html__( 'Could not process payment:  %s', 'bt-ipay-payments' ),
-						esc_html( $this->get_consumer_message() )
+						/* translators: 1: payment id, 2: order status */
+						esc_html__( 'Payment `%1$s` was received for an order with status `%2$s`; the order status was not changed.', 'bt-ipay-payments' ),
+						$this->payment_engine_id,
+						$this->order_service->get_status()
 					)
 				);
 			}
-		} finally {
-			$lock->release();
+			return;
 		}
+
+		$this->order_service->update_status_if_allowed( 'failed', $this->get_status_message() );
+		throw new \Exception(
+			sprintf(
+				/* translators: %s: payment error message */
+				esc_html__( 'Could not process payment:  %s', 'bt-ipay-payments' ),
+				esc_html( $this->get_consumer_message() )
+			)
+		);
 	}
 
 	/**
-	 * Change the order status only when allowed from its current status; otherwise just add the note.
+	 * No processor has recorded a result for this payment yet.
 	 */
-	private function update_order_status( string $status, string $message ) {
-		if ( $this->order_service->can_transition_to( $status ) ) {
-			$this->order_service->update_status( $status, $message );
-			return;
-		}
-		$this->order_service->update_message( $message );
+	private function is_first_record(): bool {
+		$row = $this->payment_storage->find_by_payment_engine_id( $this->payment_engine_id );
+		return ( $row['status'] ?? '' ) === 'CREATED';
 	}
 
 	private function get_consumer_message() {

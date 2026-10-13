@@ -1,6 +1,5 @@
 <?php
 
-use Automattic\WooCommerce\Admin\Overrides\Order;
 use BTransilvania\Api\Model\IPayStatuses;
 
 /**
@@ -60,40 +59,66 @@ class Bt_Ipay_Webhook_Processor {
 			throw new \Exception( 'Cannot find order' );
 		}
 
-		$lock = new Bt_Ipay_Order_Lock( $order_id );
-		$lock->acquire();
-		try {
-			$order_service = new Bt_Ipay_Order( new WC_Order( $order_id ) );
+		$order_service = new Bt_Ipay_Order( new WC_Order( $order_id ) );
+		Bt_Ipay_Order_Lock::with(
+			$order_id,
+			fn() => $this->process_payment( $order_service, $payment_data, $is_loy, $payment_engine_id, $payment_status )
+		);
+	}
 
-			$payment_id = $payment_data['ipay_id'];
-			if ( $is_loy ) {
-				$payment_id = $payment_data['loy_id'];
-			}
+	private function process_payment(
+		Bt_Ipay_Order $order_service,
+		array $payment_data,
+		bool $is_loy,
+		string $payment_engine_id,
+		string $payment_status
+	) {
+		$order_service->reload();
 
-			if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_REFUNDED ) {
-				$is_full_refund = $this->add_refund( $payment_id, $order_service );
-				if ( ! $is_full_refund ) {
-					$payment_status = Bt_Ipay_Payment_Storage::STATUS_PARTIALLY_REFUNDED;
-				}
-			}
-
-			if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_DEPOSITED && ! $this->has_failed() ) {
-				$this->capture( $payment_data, $order_service, $is_loy );
-			}
-
-			if ( $is_loy ) {
-				$this->update_loy_data( $order_service, $payment_data, $payment_status );
-			} else {
-				$this->update_payment_status( $payment_engine_id, $payment_status );
-			}
-
-			$this->update_order_status(
-				$order_service,
-				$this->get_combined_status( $payment_data['ipay_id'] )
-			);
-		} finally {
-			$lock->release();
+		$payment_id = $payment_data['ipay_id'];
+		if ( $is_loy ) {
+			$payment_id = $payment_data['loy_id'];
 		}
+
+		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_REFUNDED ) {
+			$is_full_refund = $this->add_refund( $payment_id, $order_service );
+			if ( ! $is_full_refund ) {
+				$payment_status = Bt_Ipay_Payment_Storage::STATUS_PARTIALLY_REFUNDED;
+			}
+		}
+
+		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_DEPOSITED && ! $this->has_failed() ) {
+			$this->capture( $payment_data, $order_service, $is_loy );
+		}
+
+		if ( $is_loy ) {
+			if ( ! $this->is_stale_approval( $payment_status, $payment_data['loy_status'] ?? null ) ) {
+				$this->update_loy_data( $order_service, $payment_data, $payment_status );
+			}
+		} elseif ( ! $this->is_stale_approval( $payment_status, $payment_data['status'] ?? null ) ) {
+			$this->update_payment_status( $payment_engine_id, $payment_status );
+		}
+
+		$this->update_order_status(
+			$order_service,
+			$this->get_combined_status( $payment_data['ipay_id'] )
+		);
+	}
+
+	/**
+	 * A late APPROVED callback must not downgrade a payment that was already captured or refunded.
+	 */
+	private function is_stale_approval( string $payment_status, ?string $stored_status ): bool {
+		return $payment_status === Bt_Ipay_Payment_Storage::STATUS_APPROVED &&
+			in_array(
+				$stored_status,
+				array(
+					Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
+					Bt_Ipay_Payment_Storage::STATUS_PARTIALLY_REFUNDED,
+					Bt_Ipay_Payment_Storage::STATUS_REFUNDED,
+				),
+				true
+			);
 	}
 
 	/**
@@ -169,11 +194,8 @@ class Bt_Ipay_Webhook_Processor {
 		$new_order_status = $this->get_new_order_status( $payment_status );
 		/* translators: %s: payment status */
 		$message = sprintf( esc_html__( 'Received payment status: `%s` via callback', 'bt-ipay-payments' ), esc_attr( $payment_status ) );
-		if (
-			$new_order_status !== null &&
-			$order_service->can_transition_to( $new_order_status )
-		) {
-			$order_service->update_status( $new_order_status, $message );
+		if ( $new_order_status !== null ) {
+			$order_service->update_status_if_allowed( $new_order_status, $message );
 			return;
 		}
 		$order_service->update_message( $message );

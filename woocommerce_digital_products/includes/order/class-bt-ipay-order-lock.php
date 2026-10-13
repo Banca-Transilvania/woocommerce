@@ -14,21 +14,37 @@ class Bt_Ipay_Order_Lock {
 
 	private string $name;
 
-	public function __construct( int $order_id ) {
+	/**
+	 * Run $callback while holding the lock for $order_id. Throws when the lock cannot be taken.
+	 */
+	public static function with( int $order_id, callable $callback ) {
+		$lock = new self( $order_id );
+		$lock->acquire();
+		try {
+			return $callback();
+		} finally {
+			$lock->release();
+		}
+	}
+
+	private function __construct( int $order_id ) {
 		global $wpdb;
 		$this->name = $wpdb->prefix . 'bt_ipay_order_' . $order_id;
 	}
 
 	/**
-	 * Wait for the lock up to TIMEOUT seconds. Returns false on timeout.
+	 * Wait for the lock up to TIMEOUT seconds. Throws on timeout or database error.
 	 */
-	public function acquire(): bool {
+	private function acquire(): void {
 		global $wpdb;
 		//phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		return '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $this->name, self::TIMEOUT ) );
+		$result = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $this->name, self::TIMEOUT ) );
+		if ( '1' !== (string) $result ) {
+			throw new \RuntimeException( esc_html__( 'The order is still being updated, please try again in a moment.', 'bt-ipay-payments' ) );
+		}
 	}
 
-	public function release(): void {
+	private function release(): void {
 		global $wpdb;
 		//phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $this->name ) );

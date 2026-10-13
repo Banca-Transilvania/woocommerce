@@ -52,11 +52,10 @@ class Bt_Ipay_Order {
 
 
 	public function needs_processing() {
-		$items = $this->order->get_items();
-		foreach ($items as $product) {
-			if ( ! is_a( $product, 'WC_Product' ) ) continue;
-			if ( !$product->is_virtual() ) {
-				return true;  
+		foreach ( $this->order->get_items() as $item ) {
+			$product = $item->get_product();
+			if ( $product && ! $product->is_virtual() ) {
+				return true;
 			}
 		}
 
@@ -76,6 +75,10 @@ class Bt_Ipay_Order {
 		if ( class_exists( \Automattic\WooCommerce\Caches\OrderCache::class ) ) {
 			wc_get_container()->get( \Automattic\WooCommerce\Caches\OrderCache::class )->remove( $id );
 		}
+		$data_store = $this->order->get_data_store();
+		if ( $data_store->has_callable( 'clear_cached_data' ) ) {
+			$data_store->clear_cached_data( array( $id ) );
+		}
 		clean_post_cache( $id );
 		$this->order    = new WC_Order( $id );
 		$this->customer = new Bt_Ipay_Customer( $this->order );
@@ -85,7 +88,7 @@ class Bt_Ipay_Order {
 	 * The order still waits for a payment result, so the return page may act on it.
 	 */
 	public function awaits_payment(): bool {
-		$statuses = apply_filters( 'bt_ipay_payable_order_statuses', array( 'pending', 'failed' ) );
+		$statuses = (array) apply_filters( 'bt_ipay_payable_order_statuses', array( 'pending', 'failed' ) );
 		return in_array( $this->get_status(), $statuses, true );
 	}
 
@@ -97,7 +100,7 @@ class Bt_Ipay_Order {
 		$allowed_from = array(
 			'on-hold'    => array( 'pending', 'failed' ),
 			'processing' => array( 'pending', 'failed', 'on-hold' ),
-			'completed'  => array( 'pending', 'failed', 'on-hold' ),
+			'completed'  => array( 'pending', 'failed', 'on-hold', 'processing' ),
 			'failed'     => array( 'pending' ),
 			'cancelled'  => array( 'pending', 'failed', 'on-hold', 'processing' ),
 			'refunded'   => array( 'on-hold', 'processing', 'completed' ),
@@ -106,6 +109,18 @@ class Bt_Ipay_Order {
 		$allowed = in_array( $current, $allowed_from[ $new_status ] ?? array(), true );
 
 		return (bool) apply_filters( 'bt_ipay_can_update_order_status', $allowed, $current, $new_status, $this->order );
+	}
+
+	/**
+	 * Move the order to $status when the transition is allowed; otherwise only add $message as a note.
+	 */
+	public function update_status_if_allowed( string $status, string $message ): bool {
+		if ( $this->can_transition_to( $status ) ) {
+			$this->update_status( $status, $message );
+			return true;
+		}
+		$this->update_message( $message );
+		return false;
 	}
 
 	/**
