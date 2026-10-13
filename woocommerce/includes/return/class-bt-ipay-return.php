@@ -36,6 +36,9 @@ class Bt_Ipay_Return {
 			$this->validate();
 
 			$this->order_service = $this->get_order_service( $this->request->query( 'orderId' ) );
+			if ( ! $this->order_service->awaits_payment() ) {
+				$this->redirect_to_success( $this->order_service->get_order() );
+			}
 			$client        = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
 			( new Bt_Ipay_Finish_Processor(
 				$client->payment_details(

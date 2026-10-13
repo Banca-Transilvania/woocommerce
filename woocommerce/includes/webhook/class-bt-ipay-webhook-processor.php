@@ -60,34 +60,40 @@ class Bt_Ipay_Webhook_Processor {
 			throw new \Exception( 'Cannot find order' );
 		}
 
-		$order_service = new Bt_Ipay_Order( new WC_Order( $order_id ) );
+		$lock = new Bt_Ipay_Order_Lock( $order_id );
+		$lock->acquire();
+		try {
+			$order_service = new Bt_Ipay_Order( new WC_Order( $order_id ) );
 
-		$payment_id = $payment_data['ipay_id'];
-		if ( $is_loy ) {
-			$payment_id = $payment_data['loy_id'];
-		}
-
-		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_REFUNDED ) {
-			$is_full_refund = $this->add_refund( $payment_id, $order_service );
-			if ( ! $is_full_refund ) {
-				$payment_status = Bt_Ipay_Payment_Storage::STATUS_PARTIALLY_REFUNDED;
+			$payment_id = $payment_data['ipay_id'];
+			if ( $is_loy ) {
+				$payment_id = $payment_data['loy_id'];
 			}
-		}
 
-		if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_DEPOSITED && ! $this->has_failed() ) {
-			$this->capture( $payment_data, $order_service, $is_loy );
-		}
+			if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_REFUNDED ) {
+				$is_full_refund = $this->add_refund( $payment_id, $order_service );
+				if ( ! $is_full_refund ) {
+					$payment_status = Bt_Ipay_Payment_Storage::STATUS_PARTIALLY_REFUNDED;
+				}
+			}
 
-		if ( $is_loy ) {
-			$this->update_loy_data( $order_service, $payment_data, $payment_status );
-		} else {
-			$this->update_payment_status( $payment_engine_id, $payment_status );
-		}
+			if ( $payment_status === Bt_Ipay_Payment_Storage::STATUS_DEPOSITED && ! $this->has_failed() ) {
+				$this->capture( $payment_data, $order_service, $is_loy );
+			}
 
-		$this->update_order_status(
-			$order_service,
-			$this->get_combined_status( $payment_data['ipay_id'] )
-		);
+			if ( $is_loy ) {
+				$this->update_loy_data( $order_service, $payment_data, $payment_status );
+			} else {
+				$this->update_payment_status( $payment_engine_id, $payment_status );
+			}
+
+			$this->update_order_status(
+				$order_service,
+				$this->get_combined_status( $payment_data['ipay_id'] )
+			);
+		} finally {
+			$lock->release();
+		}
 	}
 
 	/**
@@ -165,7 +171,7 @@ class Bt_Ipay_Webhook_Processor {
 		$message = sprintf( esc_html__( 'Received payment status: `%s` via callback', 'bt-ipay-payments' ), esc_attr( $payment_status ) );
 		if (
 			$new_order_status !== null &&
-			$this->can_update_order_status( $order_service->get_status(), $new_order_status )
+			$order_service->can_transition_to( $new_order_status )
 		) {
 			$order_service->update_status( $new_order_status, $message );
 			return;
@@ -281,18 +287,6 @@ class Bt_Ipay_Webhook_Processor {
 		}
 
 		return abs( $available_amount ) < 0.001;
-	}
-
-	private function can_update_order_status( string $current_status, string $new_status ): bool {
-                if ( in_array( $new_status, array( 'cancelled', 'processing' ) ) ) {
-                        return ! in_array( $current_status, array( 'refunded', 'complete' ) );
-                }
-
-                if (in_array( $new_status, array( 'failed' ) ) ) {
-                        return ! in_array( $current_status, array( 'refunded', 'complete' , 'processing' , 'on-hold') );
-                }
-
-		return true;
 	}
 
 	/**

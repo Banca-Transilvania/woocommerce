@@ -56,6 +56,46 @@ class Bt_Ipay_Order {
 	}
 
 	/**
+	 * Re-read the order from the database, bypassing WooCommerce's order cache.
+	 */
+	public function reload(): void {
+		$id = $this->order->get_id();
+		if ( class_exists( \Automattic\WooCommerce\Caches\OrderCache::class ) ) {
+			wc_get_container()->get( \Automattic\WooCommerce\Caches\OrderCache::class )->remove( $id );
+		}
+		clean_post_cache( $id );
+		$this->order    = new WC_Order( $id );
+		$this->customer = new Bt_Ipay_Customer( $this->order );
+	}
+
+	/**
+	 * The order still waits for a payment result, so the return page may act on it.
+	 */
+	public function awaits_payment(): bool {
+		$statuses = apply_filters( 'bt_ipay_payable_order_statuses', array( 'pending', 'failed' ) );
+		return in_array( $this->get_status(), $statuses, true );
+	}
+
+	/**
+	 * Whether a payment result may move the order from its current status to $new_status.
+	 * Paid or closed orders are never reopened.
+	 */
+	public function can_transition_to( string $new_status ): bool {
+		$allowed_from = array(
+			'on-hold'    => array( 'pending', 'failed' ),
+			'processing' => array( 'pending', 'failed', 'on-hold' ),
+			'completed'  => array( 'pending', 'failed', 'on-hold' ),
+			'failed'     => array( 'pending' ),
+			'cancelled'  => array( 'pending', 'failed', 'on-hold', 'processing' ),
+			'refunded'   => array( 'on-hold', 'processing', 'completed' ),
+		);
+		$current = $this->get_status();
+		$allowed = in_array( $current, $allowed_from[ $new_status ] ?? array(), true );
+
+		return (bool) apply_filters( 'bt_ipay_can_update_order_status', $allowed, $current, $new_status, $this->order );
+	}
+
+	/**
 	 * Add order note
 	 *
 	 * @param string $message

@@ -51,30 +51,45 @@ class Bt_Ipay_Finish_Processor {
 	}
 
 	public function process() {
+		$lock = new Bt_Ipay_Order_Lock( $this->order_service->get_id() );
+		$lock->acquire();
+		try {
+			$this->order_service->reload();
 
-		if ( $this->store_data() === false ) {
-			throw new Bt_Ipay_Storage_Exception( esc_html__( 'Could not save finish response', 'bt-ipay-payments' ) );
+			if ( $this->store_data() === false ) {
+				throw new Bt_Ipay_Storage_Exception( esc_html__( 'Could not save finish response', 'bt-ipay-payments' ) );
+			}
+			if ( $this->response->payment_is_accepted() ) {
+				$this->save_card_data();
+				$this->update_order_status(
+					$this->response->is_authorized() ? 'on-hold' : 'processing',
+					/* translators: %s: payment id */
+					sprintf( esc_html__( 'Created payment transaction %s', 'bt-ipay-payments' ), $this->payment_engine_id )
+				);
+			} else {
+				$this->update_order_status( 'failed', $this->get_status_message() );
+				throw new \Exception(
+					sprintf(
+						/* translators: %s: payment error message */
+						esc_html__( 'Could not process payment:  %s', 'bt-ipay-payments' ),
+						esc_html( $this->get_consumer_message() )
+					)
+				);
+			}
+		} finally {
+			$lock->release();
 		}
-		if ( $this->response->payment_is_accepted() ) {
-			$this->save_card_data();
-			$this->order_service->update_status(
-				$this->response->is_authorized() ? 'on-hold' : 'processing',
-				/* translators: %s: payment id */
-				sprintf( esc_html__( 'Created payment transaction %s', 'bt-ipay-payments' ), $this->payment_engine_id )
-			);
-		} else {
-			$this->order_service->update_status(
-				'failed',
-				$this->get_status_message()
-			);
-			throw new \Exception(
-				sprintf(
-					/* translators: %s: payment error message */
-					esc_html__( 'Could not process payment:  %s', 'bt-ipay-payments' ),
-					esc_html( $this->get_consumer_message() )
-				)
-			);
+	}
+
+	/**
+	 * Change the order status only when allowed from its current status; otherwise just add the note.
+	 */
+	private function update_order_status( string $status, string $message ) {
+		if ( $this->order_service->can_transition_to( $status ) ) {
+			$this->order_service->update_status( $status, $message );
+			return;
 		}
+		$this->order_service->update_message( $message );
 	}
 
 	private function get_consumer_message() {

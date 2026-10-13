@@ -38,6 +38,9 @@ Pentru detalii aplicatiiecommerce@btrl.ro
 == Changelog ==
 = 1.0.9 =
 Compatibilitate declarată cu WooCommerce 11.2 și WordPress 7.1.
+Confirmarea plății nu se mai procesează de două ori când return URL-ul și callback-ul ajung simultan (e-mailuri și scăderi de stoc duplicate).
+Comenzile deja plătite sau finalizate nu mai sunt reschimbate de un callback întârziat sau de reaccesarea linkului de return.
+Filtre noi: `bt_ipay_can_update_order_status`, `bt_ipay_payable_order_statuses`, `bt_ipay_return_url`.
 = 1.0.8 =
 Compatibilitate declarată cu WooCommerce 11 și cu Checkout-ul pe blocuri (Cart & Checkout Blocks).
 = 1.0 =
