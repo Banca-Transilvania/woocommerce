@@ -1,94 +1,36 @@
 <?php
 
 /**
- * The plugin bootstrap file
+ * Legacy entry point, kept without a plugin header so WordPress no longer lists it.
+ * Sites that activated this file are moved over to bt-ipay-payments.php.
  *
- * This file is read by WordPress to generate the plugin information in the plugin
- * admin area. This file also includes all of the dependencies used by the plugin,
- * registers the activation and deactivation functions, and defines a function
- * that starts the plugin.
- *
- * @link              https://btepos.ro/module-ecommerce
- * @since             1.0.0
- * @package           Bt_Ipay
- *
- * @wordpress-plugin
- * Plugin Name:       BT iPay Payments
- * Plugin URI:        https://btepos.ro/module-ecommerce
- * Description:       Extinde WooCommerce cu plata prin <strong>iPay BT</strong>. Pentru conectare aveti nevoie de credentiale API de la Banca Transilvania. Pentru detalii aplicatiiecommerce@btrl.ro
- * Version:           1.0.0
- * Author:            Banca Transilvania
- * Author URI:        https://btepos.ro/module-ecommerce/
- * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
- * Text Domain:       ipay
- * Domain Path:       /languages
- * WC requires at least: 7.0
- * WC tested up to: 11.2
+ * @package Bt_Ipay
  */
 
-// If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-/**
- * Currently plugin version.
- * Start at version 1.0.0 and use SemVer - https://semver.org
- * Rename this for your plugin and update it as you release new versions.
- */
-define( 'BT_IPAY_VERSION', '1.0.0' );
+$bt_ipay_legacy = plugin_basename( __FILE__ );
+$bt_ipay_main   = dirname( $bt_ipay_legacy ) . '/bt-ipay-payments.php';
 
-define( 'BT_IPAY_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
-
-define( 'BT_IPAY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-
-/**
- * The code that runs during plugin activation.
- * This action is documented in includes/class-bt-ipay-activator.php
- */
-function activate_bt_ipay() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-bt-ipay-activator.php';
-	Bt_Ipay_Activator::activate();
+$bt_ipay_active = (array) get_option( 'active_plugins', array() );
+if ( in_array( $bt_ipay_legacy, $bt_ipay_active, true ) ) {
+	$bt_ipay_active = array_diff( $bt_ipay_active, array( $bt_ipay_legacy, $bt_ipay_main ) );
+	$bt_ipay_active[] = $bt_ipay_main;
+	sort( $bt_ipay_active );
+	update_option( 'active_plugins', $bt_ipay_active );
 }
 
-/**
- * The code that runs during plugin deactivation.
- * This action is documented in includes/class-bt-ipay-deactivator.php
- */
-function deactivate_bt_ipay() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-bt-ipay-deactivator.php';
-	Bt_Ipay_Deactivator::deactivate();
-}
-
-register_activation_hook( __FILE__, 'activate_bt_ipay' );
-register_deactivation_hook( __FILE__, 'deactivate_bt_ipay' );
-
-/**
- * The core plugin class that is used to define internationalization,
- * admin-specific hooks, and public-facing site hooks.
- */
-require plugin_dir_path( __FILE__ ) . 'includes/class-bt-ipay.php';
-
-/**
- * Begins execution of the plugin.
- *
- * Since everything within the plugin is registered via hooks,
- * then kicking off the plugin from this point in the file does
- * not affect the page life cycle.
- *
- * @since    1.0.0
- */
-function run_bt_ipay() {
-
-	$plugin = new Bt_Ipay();
-	$plugin->run();
-}
-run_bt_ipay();
-
-add_action( 'before_woocommerce_init', function() {
-	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
-		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
+if ( is_multisite() ) {
+	$bt_ipay_network = (array) get_site_option( 'active_sitewide_plugins', array() );
+	if ( isset( $bt_ipay_network[ $bt_ipay_legacy ] ) ) {
+		$bt_ipay_network[ $bt_ipay_main ] = $bt_ipay_network[ $bt_ipay_legacy ];
+		unset( $bt_ipay_network[ $bt_ipay_legacy ] );
+		update_site_option( 'active_sitewide_plugins', $bt_ipay_network );
 	}
-} );
+}
+
+unset( $bt_ipay_legacy, $bt_ipay_main, $bt_ipay_active, $bt_ipay_network );
+
+require_once __DIR__ . '/bt-ipay-payments.php';
