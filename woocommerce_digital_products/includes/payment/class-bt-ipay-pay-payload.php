@@ -145,6 +145,6 @@ class Bt_Ipay_Pay_Payload {
 	 * @return string
 	 */
 	private function get_redirect_url(): string {
-		return add_query_arg( 'wc-api', 'Bt_Ipay_Return', home_url( '/' ) );
+		return apply_filters( 'bt_ipay_return_url', add_query_arg( 'wc-api', 'Bt_Ipay_Return', home_url( '/' ) ) );
 	}
 }

@@ -6,3 +6,4 @@ require_once BT_IPAY_PLUGIN_PATH . 'includes/order/class-bt-ipay-order-exception
 require_once BT_IPAY_PLUGIN_PATH . 'includes/order/class-bt-ipay-address.php';
 require_once BT_IPAY_PLUGIN_PATH . 'includes/order/class-bt-ipay-customer.php';
 require_once BT_IPAY_PLUGIN_PATH . 'includes/order/class-bt-ipay-order.php';
+require_once BT_IPAY_PLUGIN_PATH . 'includes/order/class-bt-ipay-order-lock.php';

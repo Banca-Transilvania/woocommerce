@@ -56,6 +56,62 @@ class Bt_Ipay_Order {
 	}
 
 	/**
+	 * Re-read the order from the database, bypassing WooCommerce's order cache.
+	 */
+	public function reload(): void {
+		$id = $this->order->get_id();
+		if ( class_exists( \Automattic\WooCommerce\Caches\OrderCache::class ) ) {
+			wc_get_container()->get( \Automattic\WooCommerce\Caches\OrderCache::class )->remove( $id );
+		}
+		$data_store = $this->order->get_data_store();
+		if ( $data_store->has_callable( 'clear_cached_data' ) ) {
+			$data_store->clear_cached_data( array( $id ) );
+		}
+		clean_post_cache( $id );
+		$this->order    = new WC_Order( $id );
+		$this->customer = new Bt_Ipay_Customer( $this->order );
+	}
+
+	/**
+	 * The order still waits for a payment result, so the return page may act on it.
+	 */
+	public function awaits_payment(): bool {
+		$statuses = (array) apply_filters( 'bt_ipay_payable_order_statuses', array( 'pending', 'failed' ) );
+		return in_array( $this->get_status(), $statuses, true );
+	}
+
+	/**
+	 * Whether a payment result may move the order from its current status to $new_status.
+	 * Paid or closed orders are never reopened.
+	 */
+	public function can_transition_to( string $new_status ): bool {
+		$allowed_from = array(
+			'on-hold'    => array( 'pending', 'failed' ),
+			'processing' => array( 'pending', 'failed', 'on-hold' ),
+			'completed'  => array( 'pending', 'failed', 'on-hold', 'processing' ),
+			'failed'     => array( 'pending' ),
+			'cancelled'  => array( 'pending', 'failed', 'on-hold', 'processing' ),
+			'refunded'   => array( 'on-hold', 'processing', 'completed' ),
+		);
+		$current = $this->get_status();
+		$allowed = in_array( $current, $allowed_from[ $new_status ] ?? array(), true );
+
+		return (bool) apply_filters( 'bt_ipay_can_update_order_status', $allowed, $current, $new_status, $this->order );
+	}
+
+	/**
+	 * Move the order to $status when the transition is allowed; otherwise only add $message as a note.
+	 */
+	public function update_status_if_allowed( string $status, string $message ): bool {
+		if ( $this->can_transition_to( $status ) ) {
+			$this->update_status( $status, $message );
+			return true;
+		}
+		$this->update_message( $message );
+		return false;
+	}
+
+	/**
 	 * Add order note
 	 *
 	 * @param string $message

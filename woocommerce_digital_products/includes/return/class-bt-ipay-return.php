@@ -1,7 +1,5 @@
 <?php
 
-use Automattic\WooCommerce\Admin\Overrides\Order;
-
 /**
  *
  * @link       https://btepos.ro/module-ecommerce
@@ -35,17 +33,21 @@ class Bt_Ipay_Return {
 		try {
 			$this->validate();
 
-			$this->order_service = $this->get_order_service( $this->request->query( 'orderId' ) );
-			$client        = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
-			( new Bt_Ipay_Finish_Processor(
-				$client->payment_details(
-					new Bt_Ipay_Sdk_Common_Payload(
-						$this->request->query( 'orderId' )
-					)
-				),
-				$this->order_service,
-				$this->request->query( 'orderId' )
-			) )->process();
+			$payment_engine_id   = $this->request->query( 'orderId' );
+			$this->order_service = $this->get_order_service( $payment_engine_id );
+
+			Bt_Ipay_Order_Lock::with(
+				$this->order_service->get_id(),
+				function () use ( $payment_engine_id ) {
+					$this->order_service->reload();
+					$client = new Bt_Ipay_Sdk_Client( new Bt_Ipay_Config() );
+					( new Bt_Ipay_Finish_Processor(
+						$client->payment_details( new Bt_Ipay_Sdk_Common_Payload( $payment_engine_id ) ),
+						$this->order_service,
+						$payment_engine_id
+					) )->process();
+				}
+			);
 
 			$this->redirect_to_success( $this->order_service->get_order() );
         } catch ( Bt_Ipay_Storage_Exception $e ) {

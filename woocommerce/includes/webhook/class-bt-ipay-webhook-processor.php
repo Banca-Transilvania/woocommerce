@@ -1,6 +1,5 @@
 <?php
 
-use Automattic\WooCommerce\Admin\Overrides\Order;
 use BTransilvania\Api\Model\IPayStatuses;
 
 /**
@@ -61,6 +60,20 @@ class Bt_Ipay_Webhook_Processor {
 		}
 
 		$order_service = new Bt_Ipay_Order( new WC_Order( $order_id ) );
+		Bt_Ipay_Order_Lock::with(
+			$order_id,
+			fn() => $this->process_payment( $order_service, $payment_data, $is_loy, $payment_engine_id, $payment_status )
+		);
+	}
+
+	private function process_payment(
+		Bt_Ipay_Order $order_service,
+		array $payment_data,
+		bool $is_loy,
+		string $payment_engine_id,
+		string $payment_status
+	) {
+		$order_service->reload();
 
 		$payment_id = $payment_data['ipay_id'];
 		if ( $is_loy ) {
@@ -79,8 +92,10 @@ class Bt_Ipay_Webhook_Processor {
 		}
 
 		if ( $is_loy ) {
-			$this->update_loy_data( $order_service, $payment_data, $payment_status );
-		} else {
+			if ( ! $this->is_stale_approval( $payment_status, $payment_data['loy_status'] ?? null ) ) {
+				$this->update_loy_data( $order_service, $payment_data, $payment_status );
+			}
+		} elseif ( ! $this->is_stale_approval( $payment_status, $payment_data['status'] ?? null ) ) {
 			$this->update_payment_status( $payment_engine_id, $payment_status );
 		}
 
@@ -88,6 +103,22 @@ class Bt_Ipay_Webhook_Processor {
 			$order_service,
 			$this->get_combined_status( $payment_data['ipay_id'] )
 		);
+	}
+
+	/**
+	 * A late APPROVED callback must not downgrade a payment that was already captured or refunded.
+	 */
+	private function is_stale_approval( string $payment_status, ?string $stored_status ): bool {
+		return $payment_status === Bt_Ipay_Payment_Storage::STATUS_APPROVED &&
+			in_array(
+				$stored_status,
+				array(
+					Bt_Ipay_Payment_Storage::STATUS_DEPOSITED,
+					Bt_Ipay_Payment_Storage::STATUS_PARTIALLY_REFUNDED,
+					Bt_Ipay_Payment_Storage::STATUS_REFUNDED,
+				),
+				true
+			);
 	}
 
 	/**
@@ -163,11 +194,8 @@ class Bt_Ipay_Webhook_Processor {
 		$new_order_status = $this->get_new_order_status( $payment_status );
 		/* translators: %s: payment status */
 		$message = sprintf( esc_html__( 'Received payment status: `%s` via callback', 'bt-ipay-payments' ), esc_attr( $payment_status ) );
-		if (
-			$new_order_status !== null &&
-			$this->can_update_order_status( $order_service->get_status(), $new_order_status )
-		) {
-			$order_service->update_status( $new_order_status, $message );
+		if ( $new_order_status !== null ) {
+			$order_service->update_status_if_allowed( $new_order_status, $message );
 			return;
 		}
 		$order_service->update_message( $message );
@@ -281,18 +309,6 @@ class Bt_Ipay_Webhook_Processor {
 		}
 
 		return abs( $available_amount ) < 0.001;
-	}
-
-	private function can_update_order_status( string $current_status, string $new_status ): bool {
-                if ( in_array( $new_status, array( 'cancelled', 'processing' ) ) ) {
-                        return ! in_array( $current_status, array( 'refunded', 'complete' ) );
-                }
-
-                if (in_array( $new_status, array( 'failed' ) ) ) {
-                        return ! in_array( $current_status, array( 'refunded', 'complete' , 'processing' , 'on-hold') );
-                }
-
-		return true;
 	}
 
 	/**
