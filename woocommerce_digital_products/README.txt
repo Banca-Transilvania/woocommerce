@@ -5,7 +5,7 @@ Tags: payment, banca transilvania
 Requires at least: 5.9
 Requires PHP: 8.1
 Tested up to: 7.1
-Stable tag: 1.0.9
+Stable tag: 1.0.10
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,6 +36,8 @@ Pentru detalii aplicatiiecommerce@btrl.ro
 1. Settings page
 2. Payment page
 == Changelog ==
+= 1.0.10 =
+Compatibilitate verificată cu WooCommerce 11.3.
 = 1.0.9 =
 Compatibilitate declarată cu WooCommerce 11.2 și WordPress 7.1.
 Confirmarea plății nu se mai procesează de două ori când return URL-ul și callback-ul ajung simultan (e-mailuri și scăderi de stoc duplicate).
